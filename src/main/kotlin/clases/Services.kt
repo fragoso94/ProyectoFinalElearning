@@ -132,7 +132,14 @@ class Services: Pago(), IAutenticacion, ICurso
     //Método que mostrará los cursos disponibles en la app
     override fun mostrarCursosDisponibles(opcion: String): List<Curso>
     {
-        return cursos.filter { c -> c.getCategoria() == opcion }
+        if(opcion.uppercase() == "TODOS")
+        {
+            return cursos
+        }
+        else
+        {
+            return cursos.filter { c -> c.getCategoria() == opcion }
+        }
     }
 }
 

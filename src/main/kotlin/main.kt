@@ -2,6 +2,9 @@ import clases.Credencial
 import clases.Curso
 import clases.Services
 import datos.Utileria
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 
 var usuarioLogeado = Credencial()
 
@@ -14,28 +17,31 @@ fun main() {
     println("0. Salir")
     try
     {
-        val opcion = readLine()?.toInt()
-        when (opcion) {
-            1 -> iniciarProcesoLogin()
-            2 -> registrarUsuario()
-            3 -> modificarContrasena()
-            0 -> return
-            else -> {
-                println("Opción inválida")
-                main()
+        runBlocking {
+            val opcion = readLine()?.toInt()
+            val resultado = async {
+                when (opcion) {
+                    1 -> iniciarProcesoLogin()
+                    2 -> registrarUsuario()
+                    3 -> modificarContrasena()
+                    0 -> println("*** Hasta Pronto! ***")
+                    else -> {
+                        println("*** Opción inválida! ***")
+                        main()
+                    }
+                }
             }
+            resultado.await()
         }
     }
     catch (e: NumberFormatException)
     {
-        println("La opción elegida es inválida.")
-    }
-    finally {
+        println("*** La opción elegida es inválida! ***")
         main()
     }
 }
 
-fun iniciarProcesoLogin() {
+suspend fun iniciarProcesoLogin() {
     try
     {
         println(Utileria.TEXTO_USUARIO)
@@ -45,6 +51,8 @@ fun iniciarProcesoLogin() {
         if (usuario.isNotEmpty() && contrasena.isNotEmpty())
         {
             val servicio = Services()
+            println(Utileria.TEXTO_CARGANDO)
+            delay(Utileria.TIEMPO_ESPERA)
             var respuesta = servicio.iniciarSesion(usuario, contrasena)
             if (respuesta.exito)
             {
@@ -54,7 +62,7 @@ fun iniciarProcesoLogin() {
             else
             {
                 println(respuesta.mensaje)
-                println("Desea intentalo nuevamente.?")
+                println("*** Desea intentalo nuevamente.? ***")
                 val opcion = readLine()!!.toString()
                 if (opcion != "" && opcion == "si")
                 {
@@ -65,7 +73,7 @@ fun iniciarProcesoLogin() {
         }
         else
         {
-            println("Los datos de entradas son requeridos!!!")
+            println("*** Los datos de entradas son requeridos!!!")
         }
     }
     catch (e: Exception)
@@ -74,7 +82,7 @@ fun iniciarProcesoLogin() {
     }
 }
 
-fun registrarUsuario() {
+suspend fun registrarUsuario() {
     // Pedimos el nombre de usuario y la contraseña
     print("Ingresa tu nombre de usuario: ")
     val usuario = readLine()!!.toString()
@@ -83,6 +91,8 @@ fun registrarUsuario() {
     val contrasena = readLine()!!.toString()
 
     val servicio = Services()
+    println(Utileria.TEXTO_CARGANDO)
+    delay(Utileria.TIEMPO_ESPERA)
     var respuesta = servicio.registrarUsuario(usuario, contrasena)
     if (respuesta.exito)
     {
@@ -96,7 +106,7 @@ fun registrarUsuario() {
     }
 }
 
-fun modificarContrasena() {
+suspend fun modificarContrasena() {
     // Pedimos el nombre de usuario y la contraseña actual
     print("Ingresa tu nombre de usuario: ")
     val usuario = readLine()!!.toString()
@@ -105,24 +115,25 @@ fun modificarContrasena() {
     val nuevoPassword = readLine()!!.toString()
 
     val servicio = Services()
+    println(Utileria.TEXTO_CARGANDO)
+    delay(Utileria.TIEMPO_ESPERA)
     var respuesta = servicio.recuperarPassword(usuario, nuevoPassword)
     if (respuesta.exito)
     {
         println(respuesta.mensaje)
-        main()
     }
     else{
         println(respuesta.mensaje)
-        modificarContrasena()
     }
+    main()
 }
 
-fun inicioCursos(){
+suspend fun inicioCursos(){
     //var cursoComprado: Int
     var opcion: Int
 
     println("""
-            Home - Elearning 
+            *** Bienvenido - Elearning *** 
             
             1.- Mis cursos
             2.- Comprar cursos
@@ -136,18 +147,26 @@ fun inicioCursos(){
         0
     }
 
-    when (opcion) {
-        0 -> main()
-        1 -> cursosUsuario()
-        2 -> comprarCursos(Services())
-        else -> {
-            println("Opción no válida")
+    runBlocking {
+        val resultado = async {
+            when (opcion) {
+                0 -> main()
+                1 -> cursosUsuario()
+                2 -> comprarCursos(Services())
+                else -> {
+                    println("Opción no válida")
+                }
+            }
         }
+        resultado.await()
     }
+
 }
 
-fun cursosUsuario(){
+suspend fun cursosUsuario(){
     val servicio = Services()
+    println(Utileria.TEXTO_CARGANDO)
+    delay(Utileria.TIEMPO_ESPERA)
     val misCursos = servicio.cursosUsuario(usuarioLogeado.user)
     if (misCursos?.size != 0){
         misCursos?.forEach {
@@ -168,11 +187,11 @@ fun cursosUsuario(){
     inicioCursos()
 }
 
-fun comprarCursos(servicio: Services){
+suspend fun comprarCursos(servicio: Services){
     //val servicio = Services()
     var opcion: Int
     println("""
-            Categorías Disponibles - Elearning
+            *** Categorías Disponibles - Elearning ***
             
             1.- Todos
             2.- Desarrollo Web
@@ -187,6 +206,8 @@ fun comprarCursos(servicio: Services){
         opcion = try{ readlnOrNull()?.toInt() as Int } catch(e: NumberFormatException) { 0 }
         if(opcion != 0)
         {
+            println(Utileria.TEXTO_CARGANDO)
+            delay(Utileria.TIEMPO_ESPERA)
             val cursosDisponibles = when (opcion) {
                 1 -> servicio.mostrarCursosDisponibles("Todos")
                 2 -> servicio.mostrarCursosDisponibles("Desarrollo Web")
@@ -224,6 +245,8 @@ fun comprarCursos(servicio: Services){
                 2 -> Utileria.FormaPago.TARJETA
                 else -> null
             }
+            println(Utileria.TEXTO_CARGANDO)
+            delay(Utileria.TIEMPO_ESPERA)
             val respuesta = servicio.comprarCursos(usuarioLogeado.user, cursoSeleccionado as Curso, formaPago)
             if (respuesta.exito)
             {
